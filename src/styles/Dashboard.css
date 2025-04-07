@@ -1,0 +1,104 @@
+/* Dashboard.css */
+
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f6f9;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background: #1f2937;
+    color: #fff;
+    padding: 2rem 1rem;
+}
+
+.sidebar h2 {
+    font-size: 1.6rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: #60a5fa;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar nav ul li {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+}
+
+.sidebar nav ul li:hover,
+.sidebar nav ul li.active {
+    background: #374151;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: #111827;
+}
+
+/* Job Cards */
+.content-section {
+    display: grid;
+    gap: 1rem;
+}
+
+.job-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid #3b82f6;
+}
+
+.job-card h3 {
+    margin-bottom: 0.5rem;
+    color: #111827;
+}
+
+.job-card p {
+    margin: 0.2rem 0;
+    font-size: 14px;
+    color: #4b5563;
+}
+
+/* Table */
+.cold-email-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.cold-email-table th,
+.cold-email-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+.cold-email-table thead {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.cold-email-table tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
