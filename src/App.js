@@ -1,97 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import './App.css';
-
-// Components
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
-import JobApplications from './pages/JobApplications';
-import AddApplication from './pages/AddApplication';
-import EditApplication from './pages/EditApplication';
-import ColdEmails from './pages/ColdEmails';
-import EmailTemplates from './pages/EmailTemplates';
-import Analytics from './pages/Analytics';
-import Settings from './pages/Settings';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import JobSearch from './pages/JobSearch';
+import JobDetails from './pages/JobDetails';
+import SavedJobs from './pages/SavedJobs';
+import ApplicationTracker from './pages/ApplicationTracker';
+import ColdEmailGenerator from './pages/ColdEmailGenerator';
+import ColdEmailTemplates from './pages/ColdEmailTemplates';
+import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import './App.css';
 
-function App() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(null);
-
-    // Check if user is authenticated
-    useEffect(() => {
-        const checkAuth = async () => {
-            // For development purposes, we'll simulate authentication
-            // In production, you would check with your backend API
-            const token = localStorage.getItem('token');
-            if (token) {
-                // Simulate fetching user data
-                setUser({
-                    id: 1,
-                    name: 'John Doe',
-                    email: 'john@example.com',
-                    avatar: '/avatar.png'
-                });
-                setIsAuthenticated(true);
-            }
-            setLoading(false);
-        };
-
-        checkAuth();
-    }, []);
-
-    const login = (userData, token) => {
-        localStorage.setItem('token', token);
-        setUser(userData);
-        setIsAuthenticated(true);
-    };
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        setUser(null);
-        setIsAuthenticated(false);
-    };
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+    const { isAuthenticated, loading } = useAuth();
 
     if (loading) {
         return <div className="loading">Loading...</div>;
     }
 
+    if (!isAuthenticated) {
+        return <Navigate to="/login" />;
+    }
+
+    return children;
+};
+
+function App() {
     return (
-        <Router>
-            <div className="app">
-                {isAuthenticated ? (
-                    <>
-                        <Navbar user={user} onLogout={logout} />
-                        <div className="main-container">
-                            <Sidebar />
-                            <main className="content">
-                                <Routes>
-                                    <Route path="/" element={<Dashboard user={user} />} />
-                                    <Route path="/applications" element={<JobApplications />} />
-                                    <Route path="/applications/add" element={<AddApplication />} />
-                                    <Route path="/applications/edit/:id" element={<EditApplication />} />
-                                    <Route path="/cold-emails" element={<ColdEmails />} />
-                                    <Route path="/email-templates" element={<EmailTemplates />} />
-                                    <Route path="/analytics" element={<Analytics />} />
-                                    <Route path="/settings" element={<Settings user={user} />} />
-                                    <Route path="*" element={<NotFound />} />
-                                </Routes>
-                            </main>
-                        </div>
-                    </>
-                ) : (
-                    <Routes>
-                        <Route path="/login" element={<Login onLogin={login} />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="*" element={<Navigate to="/login" replace />} />
-                    </Routes>
-                )}
-            </div>
-        </Router>
+        <AuthProvider>
+            <Router>
+                <div className="app-container">
+                    <Navbar />
+                    <main className="main-content">
+                        <Routes>
+                            {/* Public Routes */}
+                            <Route path="/" element={<Home />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+
+                            {/* Protected Routes */}
+                            <Route path="/dashboard" element={
+                                <ProtectedRoute>
+                                    <Dashboard />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/job-search" element={
+                                <ProtectedRoute>
+                                    <JobSearch />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/job/:id" element={
+                                <ProtectedRoute>
+                                    <JobDetails />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/saved-jobs" element={
+                                <ProtectedRoute>
+                                    <SavedJobs />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/applications" element={
+                                <ProtectedRoute>
+                                    <ApplicationTracker />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/cold-email" element={
+                                <ProtectedRoute>
+                                    <ColdEmailGenerator />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/email-templates" element={
+                                <ProtectedRoute>
+                                    <ColdEmailTemplates />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/profile" element={
+                                <ProtectedRoute>
+                                    <Profile />
+                                </ProtectedRoute>
+                            } />
+
+                            {/* 404 Route */}
+                            <Route path="*" element={<NotFound />} />
+                        </Routes>
+                    </main>
+                    <Footer />
+                </div>
+            </Router>
+        </AuthProvider>
     );
 }
 
