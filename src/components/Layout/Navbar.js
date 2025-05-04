@@ -1,32 +1,46 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Layout.css';
+import './Navbar.css';
 
-const Navbar = ({ isAuthenticated, logout }) => {
+const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const navigate = useNavigate();
+    // For now we'll use a mock authentication state
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
 
     const handleLogout = () => {
-        logout();
-        navigate('/login');
+        // Logic for logout would go here, connecting to backend
+        setIsAuthenticated(false);
+        navigate('/');
     };
 
     return (
         <nav className="navbar">
             <div className="navbar-container">
                 <Link to="/" className="navbar-logo">
-                    JobApply<span className="highlight">Pro</span>
+                    JobApply
                 </Link>
 
                 <div className="menu-icon" onClick={toggleMenu}>
-                    <i className={isMenuOpen ? "fas fa-times" : "fas fa-bars"}></i>
+                    <i className={isMenuOpen ? 'fas fa-times' : 'fas fa-bars'} />
                 </div>
 
-                <ul className={isMenuOpen ? "nav-menu active" : "nav-menu"}>
+                <ul className={isMenuOpen ? 'nav-menu active' : 'nav-menu'}>
+                    <li className="nav-item">
+                        <Link to="/" className="nav-link" onClick={() => setIsMenuOpen(false)}>
+                            Home
+                        </Link>
+                    </li>
+                    <li className="nav-item">
+                        <Link to="/job-search" className="nav-link" onClick={() => setIsMenuOpen(false)}>
+                            Find Jobs
+                        </Link>
+                    </li>
+
                     {isAuthenticated ? (
                         <>
                             <li className="nav-item">
@@ -35,22 +49,27 @@ const Navbar = ({ isAuthenticated, logout }) => {
                                 </Link>
                             </li>
                             <li className="nav-item">
-                                <Link to="/jobs" className="nav-link" onClick={() => setIsMenuOpen(false)}>
-                                    Job Applications
+                                <Link to="/saved-jobs" className="nav-link" onClick={() => setIsMenuOpen(false)}>
+                                    Saved Jobs
                                 </Link>
                             </li>
                             <li className="nav-item">
-                                <Link to="/emails" className="nav-link" onClick={() => setIsMenuOpen(false)}>
-                                    Cold Emails
+                                <Link to="/application-tracker" className="nav-link" onClick={() => setIsMenuOpen(false)}>
+                                    Application Tracker
                                 </Link>
                             </li>
                             <li className="nav-item">
-                                <Link to="/emails/templates" className="nav-link" onClick={() => setIsMenuOpen(false)}>
-                                    Email Templates
+                                <Link to="/cold-email-generator" className="nav-link" onClick={() => setIsMenuOpen(false)}>
+                                    Cold Email Tool
                                 </Link>
                             </li>
                             <li className="nav-item">
-                                <button onClick={handleLogout} className="nav-link logout-btn">
+                                <Link to="/profile" className="nav-link" onClick={() => setIsMenuOpen(false)}>
+                                    Profile
+                                </Link>
+                            </li>
+                            <li className="nav-item">
+                                <button className="logout-btn" onClick={handleLogout}>
                                     Logout
                                 </button>
                             </li>
@@ -63,8 +82,8 @@ const Navbar = ({ isAuthenticated, logout }) => {
                                 </Link>
                             </li>
                             <li className="nav-item">
-                                <Link to="/register" className="nav-link" onClick={() => setIsMenuOpen(false)}>
-                                    Register
+                                <Link to="/register" className="nav-link signup-btn" onClick={() => setIsMenuOpen(false)}>
+                                    Sign Up
                                 </Link>
                             </li>
                         </>

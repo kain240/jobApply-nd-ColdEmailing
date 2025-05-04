@@ -1,100 +1,49 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
-import Home from './pages/Home';
-import Login from './components/Auth/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import JobSearch from './pages/JobSearch';
-import JobDetails from './pages/JobDetails';
-import SavedJobs from './pages/SavedJobs';
-import ApplicationTracker from './pages/ApplicationTracker';
-import ColdEmailGenerator from './pages/ColdEmailGenerator';
-import ColdEmailTemplates from './pages/ColdEmailTemplates';
-import Profile from './pages/Profile';
-import NotFound from './pages/NotFound';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated, loading } = useAuth();
+// Layout Components
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
 
-    if (loading) {
-        return <div className="loading">Loading...</div>;
-    }
-
-    if (!isAuthenticated) {
-        return <Navigate to="/login" />;
-    }
-
-    return children;
-};
+// Pages
+import Home from './pages/Home/Home';
+import Login from './pages/Login/Login';
+import Register from './pages/Register/Register';
+import Dashboard from './pages/Dashboard/Dashboard';
+import JobSearch from './pages/JobSearch/JobSearch';
+import JobDetails from './pages/JobDetails/JobDetails';
+import SavedJobs from './pages/SavedJobs/SavedJobs';
+import ApplicationTracker from './pages/ApplicationTracker/ApplicationTracker';
+import ColdEmailGenerator from './pages/ColdEmailGenerator/ColdEmailGenerator';
+import ColdEmailTemplates from './pages/ColdEmailTemplates/ColdEmailTemplates';
+import Profile from './pages/Profile/Profile';
+import NotFound from './pages/NotFound/NotFound';
 
 function App() {
     return (
-        <AuthProvider>
-            <Router>
-                <div className="app-container">
-                    <Navbar />
-                    <main className="main-content">
-                        <Routes>
-                            {/* Public Routes */}
-                            <Route path="/" element={<Home />} />
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/register" element={<Register />} />
-
-                            {/* Protected Routes */}
-                            <Route path="/dashboard" element={
-                                <ProtectedRoute>
-                                    <Dashboard />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/job-search" element={
-                                <ProtectedRoute>
-                                    <JobSearch />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/job/:id" element={
-                                <ProtectedRoute>
-                                    <JobDetails />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/saved-jobs" element={
-                                <ProtectedRoute>
-                                    <SavedJobs />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/applications" element={
-                                <ProtectedRoute>
-                                    <ApplicationTracker />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/cold-email" element={
-                                <ProtectedRoute>
-                                    <ColdEmailGenerator />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/email-templates" element={
-                                <ProtectedRoute>
-                                    <ColdEmailTemplates />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/profile" element={
-                                <ProtectedRoute>
-                                    <Profile />
-                                </ProtectedRoute>
-                            } />
-
-                            {/* 404 Route */}
-                            <Route path="*" element={<NotFound />} />
-                        </Routes>
-                    </main>
-                    <Footer />
-                </div>
-            </Router>
-        </AuthProvider>
+        <Router>
+            <div className="App">
+                <Navbar />
+                <main className="main-content">
+                    <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/job-search" element={<JobSearch />} />
+                        <Route path="/job/:id" element={<JobDetails />} />
+                        <Route path="/saved-jobs" element={<SavedJobs />} />
+                        <Route path="/application-tracker" element={<ApplicationTracker />} />
+                        <Route path="/cold-email-generator" element={<ColdEmailGenerator />} />
+                        <Route path="/cold-email-templates" element={<ColdEmailTemplates />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="*" element={<NotFound />} />
+                    </Routes>
+                </main>
+                <Footer />
+            </div>
+        </Router>
     );
 }
 
