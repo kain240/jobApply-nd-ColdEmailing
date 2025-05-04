@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../styles/ColdEmailForm.css";
 import { useNavigate } from "react-router-dom";
+import api from "../api/api"; // Axios instance (make sure to create it)
 
 function ColdEmailForm() {
     const [step, setStep] = useState(1);
@@ -10,6 +11,8 @@ function ColdEmailForm() {
         title: "",
         role: "",
     });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const navigate = useNavigate();
 
@@ -17,24 +20,69 @@ function ColdEmailForm() {
         setResume(e.target.files[0]);
     };
 
-    const handleNext = () => {
-        if (step === 1 && !resume) {
-            alert("Please upload your resume to proceed.");
-            return;
-        }
+    const handleNext = async () => {
+        setError(null);
 
-        if (step === 2) {
-            // Navigate to the email preview page
-            navigate("/email-preview", {
-                state: {
-                    resume,
-                    ...formData,
-                },
-            });
-            return;
-        }
+        if (step === 1) {
+            if (!resume) {
+                alert("Please upload your resume to proceed.");
+                return;
+            }
 
-        setStep(step + 1);
+            // Step 1: Upload Resume
+            try {
+                setLoading(true);
+                const formDataToSend = new FormData();
+                formDataToSend.append("resume", resume);
+
+                // Replace with your actual endpoint
+                const response = await api.post("/upload_resume", formDataToSend);
+                console.log("Resume upload response:", response.data);
+
+                setLoading(false);
+                setStep(2);
+            } catch (err) {
+                console.error(err);
+                setError("Failed to upload resume. Try again.");
+                setLoading(false);
+            }
+
+        } else if (step === 2) {
+            const { company, title, role } = formData;
+
+            if (!company || !title || !role) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            try {
+                setLoading(true);
+
+                // Send formData to backend
+                const res = await api.post("/generate_email", {
+                    company,
+                    title,
+                    role,
+                });
+
+                console.log("Generated email response:", res.data);
+
+                setLoading(false);
+
+                // Navigate with formData and resume
+                navigate("/email-preview", {
+                    state: {
+                        resume,
+                        ...formData,
+                        generatedEmail: res.data.generatedEmail || "", // optional
+                    },
+                });
+            } catch (err) {
+                console.error(err);
+                setError("Failed to generate email.");
+                setLoading(false);
+            }
+        }
     };
 
     const handleChange = (e) => {
@@ -47,7 +95,10 @@ function ColdEmailForm() {
             <p>Take the First Step — Connect, Engage, and Impress with Cold Outreach</p>
 
             <div className="form-box">
-                {step === 1 && (
+                {loading && <p className="loading-msg">Processing...</p>}
+                {error && <p className="error-msg">{error}</p>}
+
+                {step === 1 && !loading && (
                     <>
                         <label htmlFor="resume-upload">Upload Your Resume</label>
                         <input
@@ -58,12 +109,12 @@ function ColdEmailForm() {
                         />
                         {resume && <p className="file-name">Uploaded: {resume.name}</p>}
                         <button className="next-btn" onClick={handleNext}>
-                            Next Step →
+                            Upload & Next →
                         </button>
                     </>
                 )}
 
-                {step === 2 && (
+                {step === 2 && !loading && (
                     <>
                         <input
                             type="text"

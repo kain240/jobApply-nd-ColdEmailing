@@ -1,8 +1,72 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/Dashboard.css";
+import api from "../api/api"; // Ensure this is correctly set up
 
 function Dashboard() {
     const [activeTab, setActiveTab] = useState("listed");
+    const [listedJobs, setListedJobs] = useState([]);
+    const [coldEmails, setColdEmails] = useState([]);
+
+    useEffect(() => {
+        // Fetch data once backend is ready
+        fetchListedJobs();
+        fetchColdEmails();
+    }, []);
+
+    const fetchListedJobs = async () => {
+        try {
+            // const res = await api.get("/jobs/listed");
+            // setListedJobs(res.data.jobs);
+
+            // Placeholder data
+            setListedJobs([
+                {
+                    title: "Frontend Developer - Google",
+                    status: "Under Review",
+                    date: "March 28, 2025",
+                },
+                {
+                    title: "Full Stack Engineer - Amazon",
+                    status: "Interview Scheduled",
+                    date: "March 24, 2025",
+                },
+            ]);
+        } catch (err) {
+            console.error("Error fetching listed jobs:", err);
+        }
+    };
+
+    const fetchColdEmails = async () => {
+        try {
+            // const res = await api.get("/emails/cold");
+            // setColdEmails(res.data.emails);
+
+            // Placeholder data
+            setColdEmails([
+                {
+                    company: "Netflix",
+                    email: "hr@netflix.com",
+                    role: "Backend Engineer",
+                    status: "No Reply",
+                    date: "April 1, 2025",
+                },
+                {
+                    company: "Spotify",
+                    email: "jobs@spotify.com",
+                    role: "DevOps Engineer",
+                    status: "Replied",
+                    date: "March 30, 2025",
+                },
+            ]);
+        } catch (err) {
+            console.error("Error fetching cold emails:", err);
+        }
+    };
+
+    const logoutHandler = () => {
+        // Clear session/auth here
+        console.log("Logging out...");
+    };
 
     return (
         <div className="dashboard-container">
@@ -14,7 +78,7 @@ function Dashboard() {
                         <li className={activeTab === "cold" ? "active" : ""} onClick={() => setActiveTab("cold")}>Cold Emails</li>
                         <li>Saved Jobs</li>
                         <li>Settings</li>
-                        <li>Logout</li>
+                        <li onClick={logoutHandler}>Logout</li>
                     </ul>
                 </nav>
             </aside>
@@ -24,23 +88,20 @@ function Dashboard() {
                     <h1>{activeTab === "listed" ? "Listed Job Applications" : "Cold Email Tracker"}</h1>
                 </header>
 
-                {activeTab === "listed" && (
-                    <section className="content-section">
-                        <div className="job-card">
-                            <h3>Frontend Developer - Google</h3>
-                            <p>Status: Under Review</p>
-                            <p>Applied on: March 28, 2025</p>
-                        </div>
-                        <div className="job-card">
-                            <h3>Full Stack Engineer - Amazon</h3>
-                            <p>Status: Interview Scheduled</p>
-                            <p>Applied on: March 24, 2025</p>
-                        </div>
-                    </section>
-                )}
-
-                {activeTab === "cold" && (
-                    <section className="content-section">
+                <section className="content-section">
+                    {activeTab === "listed" ? (
+                        listedJobs.length > 0 ? (
+                            listedJobs.map((job, index) => (
+                                <div key={index} className="job-card">
+                                    <h3>{job.title}</h3>
+                                    <p>Status: {job.status}</p>
+                                    <p>Applied on: {job.date}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <p>No job applications found.</p>
+                        )
+                    ) : (
                         <table className="cold-email-table">
                             <thead>
                             <tr>
@@ -52,24 +113,25 @@ function Dashboard() {
                             </tr>
                             </thead>
                             <tbody>
-                            <tr>
-                                <td>Netflix</td>
-                                <td>hr@netflix.com</td>
-                                <td>Backend Engineer</td>
-                                <td>No Reply</td>
-                                <td>April 1, 2025</td>
-                            </tr>
-                            <tr>
-                                <td>Spotify</td>
-                                <td>jobs@spotify.com</td>
-                                <td>DevOps Engineer</td>
-                                <td>Replied</td>
-                                <td>March 30, 2025</td>
-                            </tr>
+                            {coldEmails.length > 0 ? (
+                                coldEmails.map((email, index) => (
+                                    <tr key={index}>
+                                        <td>{email.company}</td>
+                                        <td>{email.email}</td>
+                                        <td>{email.role}</td>
+                                        <td>{email.status}</td>
+                                        <td>{email.date}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5">No cold emails tracked yet.</td>
+                                </tr>
+                            )}
                             </tbody>
                         </table>
-                    </section>
-                )}
+                    )}
+                </section>
             </main>
         </div>
     );

@@ -8,19 +8,20 @@ import ColdEmailing from "./pages/ColdEmailing"; // ✅ Ensure correct import
 import JobListings from './pages/JobListings';
 import ColdEmailForm from "./pages/ColdEmailing";
 import GeneratedEmail from "./pages/GeneratedEmail";
+import ResumeUpload from "./components/ResumeUpload";
 
 function App() {
     return (
         <Router>
             <Navbar />
             <Routes>
-                <Route path="/job-listings" element={<JobListings />} />
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<JobListings />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/cold-emailing" element={<ColdEmailing />} />
-                <Route path="/" element={<ColdEmailForm />} />
-                <Route path="/email-preview" element={<GeneratedEmail />} />
+                <Route path="/upload-resume" element={<ResumeUpload />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/generate-email" element={<ColdEmailing />} />
+                <Route path="/email-output" element={<GeneratedEmail />} />
             </Routes>
         </Router>
     );

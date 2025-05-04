@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "../styles/global.css";
 import "../styles/Auth.css";
 
@@ -8,9 +9,22 @@ function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            navigate("/dashboard");
+        }
+    }, [navigate]);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!email.includes("@")) {
+            setError("Please enter a valid email address.");
+            return;
+        }
 
         if (password.length < 8) {
             setError("Password must be at least 8 characters long.");
@@ -18,25 +32,36 @@ function Login() {
         }
 
         setError("");
+        setLoading(true);
 
-        // Temporary user data handling
-        const userData = { email, password };
-        console.log("User logged in:", userData);
+        try {
+            const res = await axios.post("http://localhost:5000/api/login", {
+                email,
+                password,
+            });
 
-        // Redirect to dashboard
-        navigate("/dashboard");
+            if (res.data.success) {
+                localStorage.setItem("token", res.data.token);
+                navigate("/dashboard");
+            } else {
+                setError(res.data.message || "Invalid credentials.");
+            }
+        } catch (err) {
+            console.error(err);
+            setError("Server error. Please try again later.");
+        }
+
+        setLoading(false);
     };
 
     const handleGoogleSignin = () => {
-        // Temporary simulation
-        console.log("Signing up with Google...");
-        navigate("/dashboard");
+        console.log("Signing in with Google...");
+        navigate("/dashboard"); // Replace with actual OAuth flow
     };
 
     const handleLinkedInSignin = () => {
-        // Temporary simulation
-        console.log("Signing up with LinkedIn...");
-        navigate("/dashboard");
+        console.log("Signing in with LinkedIn...");
+        navigate("/dashboard"); // Replace with actual OAuth flow
     };
 
     return (
@@ -67,7 +92,9 @@ function Login() {
                         <div className="forgot">
                             <a href="#">Forgot Password?</a>
                         </div>
-                        <button type="submit">Sign in</button>
+                        <button type="submit" disabled={loading}>
+                            {loading ? "Signing in..." : "Sign in"}
+                        </button>
                         <div className="or">Or</div>
                         <div className="social-buttons">
                             <button type="button" onClick={handleGoogleSignin}>
@@ -77,7 +104,7 @@ function Login() {
                                 🔗 Sign up with LinkedIn
                             </button>
                         </div>
-                        <p style={{fontSize: "12px", marginTop: "20px"}}>
+                        <p style={{ fontSize: "12px", marginTop: "20px" }}>
                             Don’t have an account? <a href="/signup">Sign up</a>
                         </p>
                     </form>
