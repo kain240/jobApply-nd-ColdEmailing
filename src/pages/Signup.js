@@ -1,117 +1,93 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import "../styles/global.css";
-import "../styles/Auth.css";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import '../styles/Auth.css';
 
 function Signup() {
-    const navigate = useNavigate();
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const { signup } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Form validation
-        if (!email.includes("@")) {
-            setError("Please enter a valid email address.");
-            return;
+        if (password !== confirmPassword) {
+            return setError('Passwords do not match');
         }
 
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters long.");
-            return;
-        }
-
-        setError("");
+        setError('');
         setLoading(true);
 
         try {
-            const res = await axios.post("http://localhost:5000/api/signup", {
-                name,
-                email,
-                password,
-            });
-
-            if (res.data.success) {
-                localStorage.setItem("token", res.data.token);
-                navigate("/dashboard");
-            } else {
-                setError(res.data.message || "Signup failed. Please try again.");
-            }
+            await signup(name, email, password);
+            // After successful signup, redirect to login
+            navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
         } catch (err) {
+            setError('Failed to create an account.');
             console.error(err);
-            setError("Server error. Please try again later.");
         }
 
         setLoading(false);
     };
 
-    const handleGoogleSignup = () => {
-        console.log("Signing up with Google...");
-        // Temporary simulation
-        navigate("/dashboard"); // Replace with actual OAuth flow
-    };
-
-    const handleLinkedInSignup = () => {
-        console.log("Signing up with LinkedIn...");
-        // Temporary simulation
-        navigate("/dashboard"); // Replace with actual OAuth flow
-    };
-
     return (
         <div className="auth-container">
-            <div className="auth-box">
-                <div className="auth-form">
-                    <h2>Create an Account ✨</h2>
-                    <p>
-                        Join us and shape your journey.<br />
-                        Fill in the details to get started.
-                    </p>
-                    <form onSubmit={handleSubmit}>
+            <div className="auth-card">
+                <h2>Sign Up</h2>
+                {error && <div className="error-message">{error}</div>}
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="name">Full Name</label>
                         <input
                             type="text"
-                            placeholder="Full Name"
+                            id="name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
                         />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="email">Email</label>
                         <input
                             type="email"
-                            placeholder="Email Address"
+                            id="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="password">Password</label>
                         <input
                             type="password"
-                            placeholder="Create Password"
+                            id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
-                        {error && <p className="error-text">{error}</p>}
-                        <button type="submit" disabled={loading}>
-                            {loading ? "Signing up..." : "Sign up"}
-                        </button>
-                        <div className="or">Or</div>
-                        <div className="social-buttons">
-                            <button type="button" onClick={handleGoogleSignup}>
-                                🔵 Sign up with Google
-                            </button>
-                            <button type="button" onClick={handleLinkedInSignup}>
-                                🔗 Sign up with LinkedIn
-                            </button>
-                        </div>
-                        <p style={{ fontSize: "12px", marginTop: "20px" }}>
-                            Already have an account? <a href="/login">Login</a>
-                        </p>
-                    </form>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="confirm-password">Confirm Password</label>
+                        <input
+                            type="password"
+                            id="confirm-password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <button type="submit" className="auth-button" disabled={loading}>
+                        {loading ? 'Creating Account...' : 'Sign Up'}
+                    </button>
+                </form>
+                <div className="auth-footer">
+                    Already have an account? <Link to="/login">Log In</Link>
                 </div>
-                <div className="auth-image"></div>
             </div>
         </div>
     );

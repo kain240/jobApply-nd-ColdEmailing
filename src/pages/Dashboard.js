@@ -1,140 +1,129 @@
-import React, { useState, useEffect } from "react";
-import "../styles/Dashboard.css";
-import api from "../api/api"; // Ensure this is correctly set up
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import '../styles/Dashboard.css';
 
 function Dashboard() {
-    const [activeTab, setActiveTab] = useState("listed");
-    const [listedJobs, setListedJobs] = useState([]);
-    const [coldEmails, setColdEmails] = useState([]);
+    const { currentUser } = useAuth();
+    const [stats, setStats] = useState({
+        jobsApplied: 0,
+        emailsSent: 0,
+        responses: 0,
+        interviews: 0
+    });
+    const [recentActivity, setRecentActivity] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Fetch data once backend is ready
-        fetchListedJobs();
-        fetchColdEmails();
+        const fetchDashboardData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                // Fetch statistics
+                const statsResponse = await fetch('http://localhost:5000/api/dashboard/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                // Fetch recent activity
+                const activityResponse = await fetch('http://localhost:5000/api/dashboard/activity', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (statsResponse.ok && activityResponse.ok) {
+                    const statsData = await statsResponse.json();
+                    const activityData = await activityResponse.json();
+
+                    setStats(statsData);
+                    setRecentActivity(activityData);
+                } else {
+                    console.error('Failed to fetch dashboard data');
+                }
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
     }, []);
 
-    const fetchListedJobs = async () => {
-        try {
-            // const res = await api.get("/jobs/listed");
-            // setListedJobs(res.data.jobs);
-
-            // Placeholder data
-            setListedJobs([
-                {
-                    title: "Frontend Developer - Google",
-                    status: "Under Review",
-                    date: "March 28, 2025",
-                },
-                {
-                    title: "Full Stack Engineer - Amazon",
-                    status: "Interview Scheduled",
-                    date: "March 24, 2025",
-                },
-            ]);
-        } catch (err) {
-            console.error("Error fetching listed jobs:", err);
-        }
-    };
-
-    const fetchColdEmails = async () => {
-        try {
-            // const res = await api.get("/emails/cold");
-            // setColdEmails(res.data.emails);
-
-            // Placeholder data
-            setColdEmails([
-                {
-                    company: "Netflix",
-                    email: "hr@netflix.com",
-                    role: "Backend Engineer",
-                    status: "No Reply",
-                    date: "April 1, 2025",
-                },
-                {
-                    company: "Spotify",
-                    email: "jobs@spotify.com",
-                    role: "DevOps Engineer",
-                    status: "Replied",
-                    date: "March 30, 2025",
-                },
-            ]);
-        } catch (err) {
-            console.error("Error fetching cold emails:", err);
-        }
-    };
-
-    const logoutHandler = () => {
-        // Clear session/auth here
-        console.log("Logging out...");
-    };
+    if (loading) {
+        return <div className="loading">Loading dashboard data...</div>;
+    }
 
     return (
         <div className="dashboard-container">
-            <aside className="sidebar">
-                <h2>JobTrackr</h2>
-                <nav>
-                    <ul>
-                        <li className={activeTab === "listed" ? "active" : ""} onClick={() => setActiveTab("listed")}>Listed Jobs</li>
-                        <li className={activeTab === "cold" ? "active" : ""} onClick={() => setActiveTab("cold")}>Cold Emails</li>
-                        <li>Saved Jobs</li>
-                        <li>Settings</li>
-                        <li onClick={logoutHandler}>Logout</li>
-                    </ul>
-                </nav>
-            </aside>
+            <div className="dashboard-header">
+                <h1>Welcome, {currentUser?.name || 'User'}</h1>
+                <p>Here's your job search overview</p>
+            </div>
 
-            <main className="main-content">
-                <header>
-                    <h1>{activeTab === "listed" ? "Listed Job Applications" : "Cold Email Tracker"}</h1>
-                </header>
+            <div className="stats-grid">
+                <div className="stat-card">
+                    <h3>Jobs Applied</h3>
+                    <p className="stat-number">{stats.jobsApplied}</p>
+                </div>
+                <div className="stat-card">
+                    <h3>Cold Emails Sent</h3>
+                    <p className="stat-number">{stats.emailsSent}</p>
+                </div>
+                <div className="stat-card">
+                    <h3>Responses</h3>
+                    <p className="stat-number">{stats.responses}</p>
+                </div>
+                <div className="stat-card">
+                    <h3>Interviews</h3>
+                    <p className="stat-number">{stats.interviews}</p>
+                </div>
+            </div>
 
-                <section className="content-section">
-                    {activeTab === "listed" ? (
-                        listedJobs.length > 0 ? (
-                            listedJobs.map((job, index) => (
-                                <div key={index} className="job-card">
-                                    <h3>{job.title}</h3>
-                                    <p>Status: {job.status}</p>
-                                    <p>Applied on: {job.date}</p>
+            <div className="recent-activity">
+                <h2>Recent Activity</h2>
+                {recentActivity.length > 0 ? (
+                    <div className="activity-list">
+                        {recentActivity.map((activity, index) => (
+                            <div key={index} className="activity-item">
+                                <div className="activity-icon">{getActivityIcon(activity.type)}</div>
+                                <div className="activity-details">
+                                    <p className="activity-text">{activity.description}</p>
+                                    <p className="activity-date">{new Date(activity.date).toLocaleDateString()}</p>
                                 </div>
-                            ))
-                        ) : (
-                            <p>No job applications found.</p>
-                        )
-                    ) : (
-                        <table className="cold-email-table">
-                            <thead>
-                            <tr>
-                                <th>Company</th>
-                                <th>Contact Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {coldEmails.length > 0 ? (
-                                coldEmails.map((email, index) => (
-                                    <tr key={index}>
-                                        <td>{email.company}</td>
-                                        <td>{email.email}</td>
-                                        <td>{email.role}</td>
-                                        <td>{email.status}</td>
-                                        <td>{email.date}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5">No cold emails tracked yet.</td>
-                                </tr>
-                            )}
-                            </tbody>
-                        </table>
-                    )}
-                </section>
-            </main>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="no-activity">No recent activity to display</p>
+                )}
+            </div>
+
+            <div className="quick-actions">
+                <h2>Quick Actions</h2>
+                <div className="action-buttons">
+                    <a href="/jobs" className="action-button">Find Jobs</a>
+                    <a href="/cold-email" className="action-button">Send Cold Emails</a>
+                </div>
+            </div>
         </div>
     );
+}
+
+// Helper function to get an icon based on activity type
+function getActivityIcon(type) {
+    switch (type) {
+        case 'application':
+            return '📝';
+        case 'email':
+            return '📧';
+        case 'response':
+            return '📬';
+        case 'interview':
+            return '👥';
+        default:
+            return '🔔';
+    }
 }
 
 export default Dashboard;

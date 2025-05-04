@@ -1,29 +1,56 @@
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Navbar from "./components/Navbar"; // ✅ Ensure correct import
-import Login from "./pages/Login"; // ✅ Ensure correct import
-import Signup from "./pages/Signup"; // ✅ Ensure correct import
-import Dashboard from "./pages/Dashboard"; // ✅ Ensure correct import
-import ColdEmailing from "./pages/ColdEmailing"; // ✅ Ensure correct import
-import JobListings from './pages/JobListings';
-import ColdEmailForm from "./pages/ColdEmailing";
-import GeneratedEmail from "./pages/GeneratedEmail";
-import ResumeUpload from "./components/ResumeUpload";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import JobListing from './pages/JobListing';
+import ColdEmailing from './pages/ColdEmailing';
+import Navbar from './components/Navbar';
+import './App.css';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+// Protected route component to handle authentication
+const ProtectedRoute = ({ children }) => {
+    const { isAuthenticated } = useAuth();
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" />;
+    }
+
+    return children;
+};
 
 function App() {
     return (
-        <Router>
-            <Navbar />
-            <Routes>
-                <Route path="/" element={<JobListings />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/upload-resume" element={<ResumeUpload />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/generate-email" element={<ColdEmailing />} />
-                <Route path="/email-output" element={<GeneratedEmail />} />
-            </Routes>
-        </Router>
+        <AuthProvider>
+            <Router>
+                <div className="app">
+                    <Navbar />
+                    <div className="content">
+                        <Routes>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/signup" element={<Signup />} />
+                            <Route path="/dashboard" element={
+                                <ProtectedRoute>
+                                    <Dashboard />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/jobs" element={
+                                <ProtectedRoute>
+                                    <JobListing />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/cold-email" element={
+                                <ProtectedRoute>
+                                    <ColdEmailing />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/" element={<Navigate to="/login" />} />
+                        </Routes>
+                    </div>
+                </div>
+            </Router>
+        </AuthProvider>
     );
 }
 

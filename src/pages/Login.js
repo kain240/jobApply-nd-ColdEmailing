@@ -1,115 +1,65 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import "../styles/global.css";
-import "../styles/Auth.css";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import '../styles/Auth.css';
 
 function Login() {
-    const navigate = useNavigate();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            navigate("/dashboard");
-        }
-    }, [navigate]);
+    const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!email.includes("@")) {
-            setError("Please enter a valid email address.");
-            return;
-        }
-
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters long.");
-            return;
-        }
-
-        setError("");
+        setError('');
         setLoading(true);
 
         try {
-            const res = await axios.post("http://localhost:5000/api/login", {
-                email,
-                password,
-            });
-
-            if (res.data.success) {
-                localStorage.setItem("token", res.data.token);
-                navigate("/dashboard");
-            } else {
-                setError(res.data.message || "Invalid credentials.");
-            }
+            await login(email, password);
+            navigate('/dashboard');
         } catch (err) {
+            setError('Failed to log in. Please check your credentials.');
             console.error(err);
-            setError("Server error. Please try again later.");
         }
 
         setLoading(false);
     };
 
-    const handleGoogleSignin = () => {
-        console.log("Signing in with Google...");
-        navigate("/dashboard"); // Replace with actual OAuth flow
-    };
-
-    const handleLinkedInSignin = () => {
-        console.log("Signing in with LinkedIn...");
-        navigate("/dashboard"); // Replace with actual OAuth flow
-    };
-
     return (
         <div className="auth-container">
-            <div className="auth-box">
-                <div className="auth-form">
-                    <h2>Welcome Back 👋</h2>
-                    <p>
-                        Ready to take the next step in your career?<br />
-                        Sign in to explore job opportunities and manage your applications.
-                    </p>
-                    <form onSubmit={handleSubmit}>
+            <div className="auth-card">
+                <h2>Log In</h2>
+                {error && <div className="error-message">{error}</div>}
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="email">Email</label>
                         <input
                             type="email"
-                            placeholder="Example@email.com"
+                            id="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="password">Password</label>
                         <input
                             type="password"
-                            placeholder="At least 8 characters"
+                            id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
-                        {error && <p className="error-text">{error}</p>}
-                        <div className="forgot">
-                            <a href="#">Forgot Password?</a>
-                        </div>
-                        <button type="submit" disabled={loading}>
-                            {loading ? "Signing in..." : "Sign in"}
-                        </button>
-                        <div className="or">Or</div>
-                        <div className="social-buttons">
-                            <button type="button" onClick={handleGoogleSignin}>
-                                🔵 Sign up with Google
-                            </button>
-                            <button type="button" onClick={handleLinkedInSignin}>
-                                🔗 Sign up with LinkedIn
-                            </button>
-                        </div>
-                        <p style={{ fontSize: "12px", marginTop: "20px" }}>
-                            Don’t have an account? <a href="/signup">Sign up</a>
-                        </p>
-                    </form>
+                    </div>
+                    <button type="submit" className="auth-button" disabled={loading}>
+                        {loading ? 'Logging in...' : 'Log In'}
+                    </button>
+                </form>
+                <div className="auth-footer">
+                    Don't have an account? <Link to="/signup">Sign Up</Link>
                 </div>
-                <div className="auth-image"></div>
             </div>
         </div>
     );
