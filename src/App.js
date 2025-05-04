@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Home from './pages/Home';
-import Login from './pages/Login';
+import Login from './components/Auth/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import JobSearch from './pages/JobSearch';
