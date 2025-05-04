@@ -12,7 +12,7 @@ import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 
-// Pages
+// Page
 import Dashboard from './pages/Dashboard';
 import AddApplication from './pages/AddApplication';
 import EditApplication from './pages/EditApplication';
