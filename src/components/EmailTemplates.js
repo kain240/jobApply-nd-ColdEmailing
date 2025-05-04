@@ -15,91 +15,12 @@ const EmailTemplates = () => {
     });
 
     useEffect(() => {
-        // This would be replaced with an actual API call
         const fetchTemplates = async () => {
             setIsLoading(true);
             try {
-                // Simulating API call with mock data
                 setTimeout(() => {
                     const mockTemplates = [
-                        {
-                            id: 1,
-                            name: 'Initial Contact Template',
-                            subject: 'Interest in {{position}} position at {{company}}',
-                            body: `Dear {{recipientName}},
-
-I hope this email finds you well. My name is {{senderName}}, and I came across the {{position}} position at {{company}}. I am very interested in this opportunity and believe my skills and experience align well with what you're looking for.
-
-I have {{years}} years of experience in {{skill1}}, {{skill2}}, and {{skill3}}. In my previous role at {{previousCompany}}, I successfully {{achievement}}.
-
-I would love the opportunity to discuss how my background might be a good fit for this position. Would you be available for a brief call next week?
-
-Thank you for considering my application. I look forward to hearing from you.
-
-Best regards,
-{{senderName}}
-{{senderPhone}}
-{{senderEmail}}
-{{senderLinkedIn}}`
-                        },
-                        {
-                            id: 2,
-                            name: 'Follow-up Template',
-                            subject: 'Following up on {{position}} application',
-                            body: `Dear {{recipientName}},
-
-I hope you're doing well. I'm writing to follow up on my application for the {{position}} position that I submitted on {{applicationDate}}.
-
-I remain very interested in the opportunity to join {{company}} and contribute my skills in {{skill1}} and {{skill2}} to your team. 
-
-If you need any additional information from me or would like to schedule an interview, please let me know. I'm looking forward to the opportunity to discuss my application further.
-
-Thank you for your time and consideration.
-
-Best regards,
-{{senderName}}
-{{senderPhone}}
-{{senderEmail}}`
-                        },
-                        {
-                            id: 3,
-                            name: 'Networking Template',
-                            subject: 'Impressed by your work at {{company}}',
-                            body: `Dear {{recipientName}},
-
-My name is {{senderName}} and I recently came across your profile on LinkedIn. I was particularly impressed by your work on {{projectOrAchievement}} at {{company}}.
-
-I am a {{profession}} with experience in {{industry}} and I'm very interested in learning more about your field and company. I would greatly appreciate the opportunity to connect and perhaps have a brief conversation about your experiences at {{company}}.
-
-Would you be available for a 15-minute call in the coming weeks? I'd be grateful for any insights you might be willing to share.
-
-Thank you for considering my request.
-
-Best regards,
-{{senderName}}
-{{senderEmail}}
-{{senderLinkedIn}}`
-                        },
-                        {
-                            id: 4,
-                            name: 'Informational Interview Template',
-                            subject: 'Request for an informational interview about {{topic}}',
-                            body: `Dear {{recipientName}},
-
-I hope this email finds you well. My name is {{senderName}}, and I am a {{profession}} interested in learning more about {{topic}} and your experiences at {{company}}.
-
-I've been following your work on {{specificProject}} and am impressed by your approach to {{specificAspect}}. I would greatly value the opportunity to learn from your experiences through a brief informational interview.
-
-Would you be willing to spare 20-30 minutes for a call in the next few weeks? I'm particularly interested in discussing {{specificQuestion1}} and {{specificQuestion2}}.
-
-Thank you for considering my request. I understand you're busy, and I appreciate any time you can offer.
-
-Best regards,
-{{senderName}}
-{{senderPhone}}
-{{senderEmail}}
-{{senderLinkedIn}}`
-                        }
+                        // mock template objects here...
                     ];
                     setTemplates(mockTemplates);
                     setIsLoading(false);
@@ -138,9 +59,7 @@ Best regards,
         setEditMode(true);
     };
 
-    const editTemplate = () => {
-        setEditMode(true);
-    };
+    const editTemplate = () => setEditMode(true);
 
     const cancelEdit = () => {
         if (activeTemplate) {
@@ -150,33 +69,20 @@ Best regards,
                 body: activeTemplate.body
             });
         } else {
-            setFormData({
-                name: '',
-                subject: '',
-                body: ''
-            });
+            setFormData({ name: '', subject: '', body: '' });
         }
         setEditMode(false);
     };
 
     const saveTemplate = async () => {
         try {
-            // This would be replaced with an actual API call
             if (activeTemplate) {
-                // Update existing template
-                // await axios.put(`/api/email-templates/${activeTemplate.id}`, formData);
-
-                // Update local state
                 const updatedTemplates = templates.map(template =>
                     template.id === activeTemplate.id ? { ...template, ...formData } : template
                 );
                 setTemplates(updatedTemplates);
                 setActiveTemplate({ ...activeTemplate, ...formData });
             } else {
-                // Create new template
-                // const response = await axios.post('/api/email-templates', formData);
-
-                // Update local state with mock ID
                 const newTemplate = {
                     id: Math.max(...templates.map(t => t.id), 0) + 1,
                     ...formData
@@ -195,17 +101,9 @@ Best regards,
 
         if (window.confirm(`Are you sure you want to delete the template "${activeTemplate.name}"?`)) {
             try {
-                // This would be replaced with an actual API call
-                // await axios.delete(`/api/email-templates/${activeTemplate.id}`);
-
-                // Update local state
                 setTemplates(templates.filter(template => template.id !== activeTemplate.id));
                 setActiveTemplate(null);
-                setFormData({
-                    name: '',
-                    subject: '',
-                    body: ''
-                });
+                setFormData({ name: '', subject: '', body: '' });
             } catch (error) {
                 console.error('Error deleting template:', error);
             }
@@ -332,68 +230,29 @@ Best regards,
                                         <h3>Available Placeholders</h3>
                                         <div className="placeholder-list">
                                             {getPlaceholders(formData.subject + formData.body).map((placeholder, index) => (
-                                                <div key={index} className="placeholder-tag">
+                                                <div key={index} className="placeholder-item">
                                                     {`{{${placeholder}}}`}
+
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="placeholder-info">
-                                            <p>Wrap placeholder text in double curly braces like: <code>{{'{{'}}recipientName{{'}}'}}</code></p>
-                                        </div>
                                     </div>
 
-                                    <div className="button-row">
-                                        <button onClick={cancelEdit} className="btn btn-cancel">
-                                            Cancel
-                                        </button>
-                                        <button onClick={saveTemplate} className="btn btn-primary">
-                                            Save Template
-                                        </button>
+                                    <div className="editor-actions">
+                                        <button onClick={saveTemplate} className="btn btn-primary">Save</button>
+                                        <button onClick={cancelEdit} className="btn btn-secondary">Cancel</button>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="template-view">
-                                    <div className="template-view-header">
-                                        <h2>{activeTemplate.name}</h2>
-                                        <div className="template-actions">
-                                            <button onClick={editTemplate} className="btn btn-edit">
-                                                Edit Template
-                                            </button>
-                                            <button onClick={deleteTemplate} className="btn btn-delete">
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="template-preview">
-                                        <div className="preview-section">
-                                            <h3>Subject</h3>
-                                            <div className="preview-subject">{activeTemplate.subject}</div>
-                                        </div>
-
-                                        <div className="preview-section">
-                                            <h3>Body</h3>
-                                            <div className="preview-body">
-                                                <pre>{activeTemplate.body}</pre>
-                                            </div>
-                                        </div>
-
-                                        <div className="template-placeholders">
-                                            <h3>Placeholders</h3>
-                                            <div className="placeholder-list">
-                                                {getPlaceholders(activeTemplate.subject + activeTemplate.body).map((placeholder, index) => (
-                                                    <div key={index} className="placeholder-tag">
-                                                        {`{{${placeholder}}}`}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="use-template-section">
-                                        <Link to={`/emails/add?template=${activeTemplate.id}`} className="btn btn-primary">
-                                            Use This Template
-                                        </Link>
+                                <div className="view-template">
+                                    <h2>{activeTemplate.name}</h2>
+                                    <h4>Subject:</h4>
+                                    <p>{activeTemplate.subject}</p>
+                                    <h4>Body:</h4>
+                                    <pre className="email-body">{activeTemplate.body}</pre>
+                                    <div className="editor-actions">
+                                        <button onClick={editTemplate} className="btn btn-primary">Edit</button>
+                                        <button onClick={deleteTemplate} className="btn btn-danger">Delete</button>
                                     </div>
                                 </div>
                             )}

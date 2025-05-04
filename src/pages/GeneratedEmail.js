@@ -1,110 +1,168 @@
-import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import "../styles/GeneratedEmail.css";
-import api from "../api/api";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { emailsApi } from '../api/apiService';
+import EmailDetail from '../components/EmailDetail';
+import '../styles/GeneratedEmail.css';
 
-function GeneratedEmail() {
-    const { state } = useLocation();
+const GeneratedEmail = () => {
+    const { id } = useParams();
     const navigate = useNavigate();
-
-    const { company, title, role, resume } = state || {};
-    const [emailContent, setEmailContent] = useState("");
-    const [name, setName] = useState("Your Name");
-    const [sending, setSending] = useState(false);
-    const [error, setError] = useState("");
+    const [email, setEmail] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedEmail, setEditedEmail] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [sendStatus, setSendStatus] = useState(null);
 
     useEffect(() => {
-        if (!company || !title || !role) return;
+        const fetchEmail = async () => {
+            setLoading(true);
+            try {
+                // Assuming there's an API endpoint to fetch a generated email by ID
+                const emailData = await emailsApi.getGeneratedEmail(id);
+                setEmail(emailData);
+                setEditedEmail(emailData);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        const template = `Dear Hiring Team at ${company},
+        fetchEmail();
+    }, [id]);
 
-I hope this message finds you well. I am writing to express my interest in the ${title} position (${role}) at ${company}.
+    const handleEdit = () => {
+        setIsEditing(true);
+    };
 
-With a strong passion for software development and experience that aligns with this role, I believe I could make valuable contributions to your team.
-
-[Relevant skills and projects from resume would be dynamically added here.]
-
-Thank you for considering my application. I look forward to the opportunity to discuss my candidacy with you.
-
-Best regards,  
-${name}`;
-
-        setEmailContent(template);
-    }, [company, title, role, name]);
-
-    const handleSend = async () => {
-        if (!emailContent || !resume) {
-            setError("Missing email content or resume. Please go back and complete the form.");
-            return;
-        }
-
+    const handleSave = async () => {
+        setLoading(true);
         try {
-            setSending(true);
-            const formData = new FormData();
-            formData.append("name", name);
-            formData.append("company", company);
-            formData.append("title", title);
-            formData.append("role", role);
-            formData.append("emailContent", emailContent);
-            formData.append("resume", resume);
+            // Save the edited email
+            await emailsApi.updateGeneratedEmail(id, editedEmail);
+            setEmail(editedEmail);
+            setIsEditing(false);
+            setSendStatus({ type: 'success', message: 'Email saved successfully!' });
 
-            // Actual API call
-            // const res = await api.post("/emails/send", formData);
-
-            // Placeholder
-            alert("Email has been sent to the hiring team!");
-
-            // Optionally navigate or reset
-            navigate("/dashboard");
+            // Clear status message after 3 seconds
+            setTimeout(() => setSendStatus(null), 3000);
         } catch (err) {
-            console.error(err);
-            setError("Failed to send the email. Please try again later.");
+            setError(err.message);
+            setSendStatus({ type: 'error', message: 'Failed to save email.' });
         } finally {
-            setSending(false);
+            setLoading(false);
         }
     };
 
-    if (!company || !title || !role) {
-        return (
-            <div className="email-generated-container">
-                <h2>Missing Information</h2>
-                <p>Some required information is missing. Please fill out the form again.</p>
-                <button className="send-btn" onClick={() => navigate("/")}>
-                    Go Back →
-                </button>
-            </div>
-        );
+    const handleCancel = () => {
+        setEditedEmail(email);
+        setIsEditing(false);
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setEditedEmail(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSendEmail = async () => {
+        if (window.confirm('Are you sure you want to send this email?')) {
+            setLoading(true);
+            try {
+                await emailsApi.sendEmail(email);
+                setSendStatus({ type: 'success', message: 'Email sent successfully!' });
+
+                // Navigate back to dashboard after 2 seconds
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 2000);
+            } catch (err) {
+                setError(err.message);
+                setSendStatus({ type: 'error', message: 'Failed to send email.' });
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleCopyToClipboard = () => {
+        const emailText = `To: ${email.recipientEmail}
+Subject: ${email.subject}
+
+${email.body}`;
+
+        navigator.clipboard.writeText(emailText)
+            .then(() => {
+                setSendStatus({ type: 'success', message: 'Email copied to clipboard!' });
+                setTimeout(() => setSendStatus(null), 3000);
+            })
+            .catch(err => {
+                setError('Failed to copy email to clipboard.');
+            });
+    };
+
+    if (loading && !email) {
+        return <div className="loading">Loading email...</div>;
+    }
+
+    if (error && !email) {
+        return <div className="error">Error: {error}</div>;
+    }
+
+    if (!email) {
+        return <div className="not-found">Email not found.</div>;
     }
 
     return (
-        <div className="email-generated-container">
-            <h2>Email Preview</h2>
+        <div className="generated-email-container">
+            <h1>Generated Email</h1>
 
-            <label htmlFor="name">Your Name</label>
-            <input
-                id="name"
-                className="name-input"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-            />
+            {sendStatus && (
+                <div className={`status-message ${sendStatus.type}`}>
+                    {sendStatus.message}
+                </div>
+            )}
 
-            <div className="email-box">
-                <pre>{emailContent}</pre>
+            <div className="email-actions">
+                <button
+                    onClick={() => navigate('/cold-emailing')}
+                    className="back-button"
+                >
+                    Back to Templates
+                </button>
+
+                {isEditing ? (
+                    <>
+                        <button onClick={handleSave} className="save-button">
+                            Save Changes
+                        </button>
+                        <button onClick={handleCancel} className="cancel-button">
+                            Cancel
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button onClick={handleEdit} className="edit-button">
+                            Edit Email
+                        </button>
+                        <button onClick={handleCopyToClipboard} className="copy-button">
+                            Copy to Clipboard
+                        </button>
+                        <button onClick={handleSendEmail} className="send-button" disabled={loading}>
+                            {loading ? 'Sending...' : 'Send Email'}
+                        </button>
+                    </>
+                )}
             </div>
 
-            {error && <p className="error-text">{error}</p>}
-
-            <button
-                className="send-btn"
-                onClick={handleSend}
-                disabled={sending}
-            >
-                {sending ? "Sending..." : "Send mail to the Recipient →"}
-            </button>
+            <div className="email-preview">
+                <EmailDetail
+                    email={isEditing ? editedEmail : email}
+                    isEditing={isEditing}
+                    onChange={handleChange}
+                />
+            </div>
         </div>
     );
-}
+};
 
 export default GeneratedEmail;

@@ -1,96 +1,62 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import './Jobs.css';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { jobsApi } from '../api/apiService';
+import '../components/Layout/Jobs.css';
 
-const JobForm = () => {
-    const { id } = useParams();
+const JobForm = ({ initialData, isEditing = false }) => {
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
     const [formData, setFormData] = useState({
-        company: '',
-        position: '',
-        location: '',
-        status: 'applied',
-        applicationDate: new Date().toISOString().substr(0, 10),
-        notes: '',
-        url: ''
+        company: initialData?.company || '',
+        position: initialData?.position || '',
+        jobDescription: initialData?.jobDescription || '',
+        location: initialData?.location || '',
+        applicationDate: initialData?.applicationDate || '',
+        applicationStatus: initialData?.applicationStatus || 'Applied',
+        jobUrl: initialData?.jobUrl || '',
+        contactPerson: initialData?.contactPerson || '',
+        contactEmail: initialData?.contactEmail || '',
+        notes: initialData?.notes || ''
     });
 
-    useEffect(() => {
-        const fetchJob = async () => {
-            if (id) {
-                setIsLoading(true);
-                try {
-                    // This would be replaced with an actual API call
-                    // const response = await axios.get(`/api/jobs/${id}`);
-
-                    // Simulating API call with mock data
-                    setTimeout(() => {
-                        const mockJob = {
-                            id: parseInt(id),
-                            company: 'Tech Innovations Inc.',
-                            position: 'Frontend Developer',
-                            location: 'San Francisco, CA',
-                            status: 'applied',
-                            applicationDate: '2025-04-01',
-                            notes: 'Applied through LinkedIn. Waiting for response.',
-                            url: 'https://techinnovations.com/careers'
-                        };
-                        setFormData(mockJob);
-                        setIsLoading(false);
-                    }, 500);
-                } catch (error) {
-                    console.error('Error fetching job:', error);
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        fetchJob();
-    }, [id]);
-
-    const handleChange = e => {
+    const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData(prevData => ({
+            ...prevData,
+            [name]: value
+        }));
     };
 
-    const handleSubmit = async e => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsSubmitting(true);
+        setLoading(true);
+        setError(null);
 
         try {
-            // This would be replaced with an actual API call
-            setTimeout(() => {
-                // if (id) {
-                //   await axios.put(`/api/jobs/${id}`, formData);
-                // } else {
-                //   await axios.post('/api/jobs', formData);
-                // }
-                setIsSubmitting(false);
-                navigate('/jobs');
-            }, 1000);
-        } catch (error) {
-            console.error('Error saving job:', error);
-            setIsSubmitting(false);
+            if (isEditing && initialData?.id) {
+                await jobsApi.updateJob(initialData.id, formData);
+            } else {
+                await jobsApi.createJob(formData);
+            }
+            navigate('/dashboard');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="loading-container">
-                <div className="loader"></div>
-                <p>Loading job details...</p>
-            </div>
-        );
-    }
-
     return (
         <div className="job-form-container">
-            <h1>{id ? 'Edit Job Application' : 'Add New Job Application'}</h1>
+            <h2>{isEditing ? 'Edit Job Application' : 'Add New Job Application'}</h2>
+
+            {error && <div className="error-message">{error}</div>}
+
             <form onSubmit={handleSubmit} className="job-form">
                 <div className="form-group">
-                    <label htmlFor="company">Company Name</label>
+                    <label htmlFor="company">Company Name*</label>
                     <input
                         type="text"
                         id="company"
@@ -98,11 +64,12 @@ const JobForm = () => {
                         value={formData.company}
                         onChange={handleChange}
                         required
+                        placeholder="Enter company name"
                     />
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="position">Position</label>
+                    <label htmlFor="position">Position*</label>
                     <input
                         type="text"
                         id="position"
@@ -110,6 +77,19 @@ const JobForm = () => {
                         value={formData.position}
                         onChange={handleChange}
                         required
+                        placeholder="Enter job position"
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="jobDescription">Job Description</label>
+                    <textarea
+                        id="jobDescription"
+                        name="jobDescription"
+                        value={formData.jobDescription}
+                        onChange={handleChange}
+                        rows="5"
+                        placeholder="Paste job description here"
                     />
                 </div>
 
@@ -121,28 +101,12 @@ const JobForm = () => {
                         name="location"
                         value={formData.location}
                         onChange={handleChange}
-                        required
+                        placeholder="Remote, City, or Address"
                     />
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="status">Application Status</label>
-                    <select
-                        id="status"
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                        required
-                    >
-                        <option value="applied">Applied</option>
-                        <option value="interview">Interview</option>
-                        <option value="offer">Offer</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="applicationDate">Application Date</label>
+                    <label htmlFor="applicationDate">Application Date*</label>
                     <input
                         type="date"
                         id="applicationDate"
@@ -154,14 +118,57 @@ const JobForm = () => {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="url">Job Posting URL</label>
+                    <label htmlFor="applicationStatus">Application Status*</label>
+                    <select
+                        id="applicationStatus"
+                        name="applicationStatus"
+                        value={formData.applicationStatus}
+                        onChange={handleChange}
+                        required
+                    >
+                        <option value="Applied">Applied</option>
+                        <option value="Screening">Screening</option>
+                        <option value="Interview">Interview</option>
+                        <option value="Technical">Technical Assessment</option>
+                        <option value="Offer">Offer</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Withdrawn">Withdrawn</option>
+                    </select>
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="jobUrl">Job URL</label>
                     <input
                         type="url"
-                        id="url"
-                        name="url"
-                        value={formData.url}
+                        id="jobUrl"
+                        name="jobUrl"
+                        value={formData.jobUrl}
                         onChange={handleChange}
                         placeholder="https://example.com/job-posting"
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="contactPerson">Contact Person</label>
+                    <input
+                        type="text"
+                        id="contactPerson"
+                        name="contactPerson"
+                        value={formData.contactPerson}
+                        onChange={handleChange}
+                        placeholder="Recruiter or hiring manager name"
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="contactEmail">Contact Email</label>
+                    <input
+                        type="email"
+                        id="contactEmail"
+                        name="contactEmail"
+                        value={formData.contactEmail}
+                        onChange={handleChange}
+                        placeholder="contact@example.com"
                     />
                 </div>
 
@@ -172,24 +179,25 @@ const JobForm = () => {
                         name="notes"
                         value={formData.notes}
                         onChange={handleChange}
-                        rows="4"
-                    ></textarea>
+                        rows="3"
+                        placeholder="Add any additional notes here"
+                    />
                 </div>
 
-                <div className="form-actions">
+                <div className="form-buttons">
                     <button
                         type="button"
-                        className="btn btn-cancel"
-                        onClick={() => navigate('/jobs')}
+                        className="cancel-button"
+                        onClick={() => navigate('/dashboard')}
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        className="btn btn-save"
-                        disabled={isSubmitting}
+                        className="submit-button"
+                        disabled={loading}
                     >
-                        {isSubmitting ? 'Saving...' : 'Save Job Application'}
+                        {loading ? 'Saving...' : (isEditing ? 'Update Application' : 'Add Application')}
                     </button>
                 </div>
             </form>

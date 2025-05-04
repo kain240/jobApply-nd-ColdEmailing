@@ -1,300 +1,218 @@
-import React, { useState } from 'react';
-//import '../styles/ColdEmailing.css';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { jobsApi, emailsApi } from '../api/apiService';
+import EmailTemplateCard from '../components/EmailTemplateCard';
+import '../styles/ColdEmailForm.css';
 
-function ColdEmailing() {
-    const [step, setStep] = useState(1);
-    const [resume, setResume] = useState(null);
-    const [resumeUploaded, setResumeUploaded] = useState(false);
-    const [formData, setFormData] = useState({
-        companyName: '',
-        role: '',
-        skills: ''
+const ColdEmailing = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const jobId = queryParams.get('jobId');
+
+    const [job, setJob] = useState(null);
+    const [templates, setTemplates] = useState([]);
+    const [selectedTemplate, setSelectedTemplate] = useState(null);
+    const [customInput, setCustomInput] = useState({
+        recipientName: '',
+        recipientEmail: '',
+        additionalContext: ''
     });
-    const [generatedEmail, setGeneratedEmail] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const handleResumeChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setResume(file);
-        }
-    };
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                // Fetch templates
+                const templatesData = await emailsApi.getTemplates();
+                setTemplates(templatesData);
 
-    const handleResumeUpload = async (e) => {
-        e.preventDefault();
-        if (!resume) {
-            setError('Please select a resume file to upload');
-            return;
-        }
+                // If jobId is provided, fetch job details
+                if (jobId) {
+                    const jobData = await jobsApi.getJob(jobId);
+                    setJob(jobData);
 
-        setLoading(true);
-        setError('');
-
-        try {
-            const formData = new FormData();
-            formData.append('resume', resume);
-
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/cold-email/upload-resume', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error('Resume upload failed');
+                    // Pre-fill form if job has contact info
+                    if (jobData.contactPerson || jobData.contactEmail) {
+                        setCustomInput({
+                            recipientName: jobData.contactPerson || '',
+                            recipientEmail: jobData.contactEmail || '',
+                            additionalContext: `I'm reaching out regarding the ${jobData.position} position at ${jobData.company}.`
+                        });
+                    }
+                }
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
             }
+        };
 
-            const data = await response.json();
-            setResumeUploaded(true);
-            setSuccess('Resume uploaded successfully!');
-
-            // Move to next step after a brief delay
-            setTimeout(() => {
-                setStep(2);
-                setSuccess('');
-            }, 1500);
-        } catch (err) {
-            console.error('Error uploading resume:', err);
-            setError('Failed to upload resume. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
+        fetchData();
+    }, [jobId]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setCustomInput(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleGenerateEmail = async (e) => {
+    const handleTemplateSelect = (template) => {
+        if (selectedTemplate && selectedTemplate.id === template.id) {
+            setSelectedTemplate(null); // Deselect if already selected
+        } else {
+            setSelectedTemplate(template); // Select new template
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.companyName || !formData.role || !formData.skills) {
-            setError('All fields are required');
+        if (!selectedTemplate) {
+            alert('Please select an email template');
             return;
         }
 
         setLoading(true);
-        setError('');
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/cold-email/generate', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
+            // Generate email from template and job data
+            const emailData = {
+                templateId: selectedTemplate.id,
+                jobData: job || null,
+                customData: customInput
+            };
+
+            const generatedEmail = await emailsApi.generateEmail(selectedTemplate.id, {
+                ...job,
+                ...customInput
             });
 
-            if (!response.ok) {
-                throw new Error('Email generation failed');
-            }
-
-            const data = await response.json();
-            setGeneratedEmail(data.email);
-            setStep(3);
+            // Navigate to the generated email page
+            navigate(`/generated-email/${generatedEmail.id}`);
         } catch (err) {
-            console.error('Error generating email:', err);
-            setError('Failed to generate email. Please try again.');
-        } finally {
+            setError(err.message);
             setLoading(false);
         }
     };
 
-    const handleSendEmail = async () => {
-        setLoading(true);
-        setError('');
-        setSuccess('');
-
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/cold-email/send', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    ...formData,
-                    emailContent: generatedEmail
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to send email');
-            }
-
-            const data = await response.json();
-            setSuccess('Email sent successfully!');
-
-            // Reset the form after successful submission
-            setTimeout(() => {
-                setStep(1);
-                setFormData({
-                    companyName: '',
-                    role: '',
-                    skills: ''
-                });
-                setResume(null);
-                setResumeUploaded(false);
-                setGeneratedEmail('');
-                setSuccess('');
-            }, 3000);
-        } catch (err) {
-            console.error('Error sending email:', err);
-            setError('Failed to send email. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+    // Create a new template
+    const handleCreateTemplate = () => {
+        navigate('/email-templates/new');
     };
 
-    const editEmail = () => {
-        setStep(2);
-    };
-
-    const renderStepContent = () => {
-        switch (step) {
-            case 1:
-                return (
-                    <div className="upload-resume-step">
-                        <h2>Upload Your Resume</h2>
-                        <p>First, we need your resume to craft a personalized cold email.</p>
-
-                        <form onSubmit={handleResumeUpload} className="resume-upload-form">
-                            <div className="file-upload">
-                                <label htmlFor="resume-upload">
-                                    {resume ? resume.name : 'Select your resume file'}
-                                </label>
-                                <input
-                                    type="file"
-                                    id="resume-upload"
-                                    accept=".pdf,.doc,.docx"
-                                    onChange={handleResumeChange}
-                                />
-                                <span className="file-hint">Supported formats: PDF, DOC, DOCX</span>
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="upload-button"
-                                disabled={loading || !resume}
-                            >
-                                {loading ? 'Uploading...' : 'Upload Resume'}
-                            </button>
-                        </form>
-                    </div>
-                );
-
-            case 2:
-                return (
-                    <div className="company-info-step">
-                        <h2>Company Details</h2>
-                        <p>Now, tell us about the company you want to reach out to.</p>
-
-                        <form onSubmit={handleGenerateEmail} className="company-form">
-                            <div className="form-group">
-                                <label htmlFor="skills">Relevant Skills</label>
-                                <textarea
-                                    id="skills"
-                                    name="skills"
-                                    value={formData.skills}
-                                    onChange={handleInputChange}
-                                    placeholder="e.g., React, JavaScript, CSS, UI/UX design"
-                                    required
-                                />
-                                <span className="input-hint">List skills relevant to the role, separated by commas</span>
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="generate-button"
-                                disabled={loading}
-                            >
-                                {loading ? 'Generating...' : 'Generate Email'}
-                            </button>
-                        </form>
-                    </div>
-                );
-
-            case 3:
-                return (
-                    <div className="email-preview-step">
-                        <h2>Your Personalized Cold Email</h2>
-                        <p>Here's your generated email. You can send it now or go back to edit company details.</p>
-
-                        <div className="email-preview">
-                            <div className="email-content">
-                                {generatedEmail.split('\n').map((line, index) => (
-                                    <p key={index}>{line}</p>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="email-actions">
-                            <button
-                                className="edit-button"
-                                onClick={editEmail}
-                            >
-                                Edit Details
-                            </button>
-                            <button
-                                className="send-button"
-                                onClick={handleSendEmail}
-                                disabled={loading}
-                            >
-                                {loading ? 'Sending...' : 'Send Email'}
-                            </button>
-                        </div>
-                    </div>
-                );
-
-            default:
-                return null;
-        }
-    };
+    if (loading) {
+        return <div className="loading">Loading...</div>;
+    }
 
     return (
-        <div className="cold-emailing-container">
-            <div className="cold-email-header">
-                <h1>Cold Email Generator</h1>
-                <p>Create personalized cold emails to reach out to potential employers</p>
-            </div>
-
-            <div className="step-indicator">
-                <div className={`step ${step >= 1 ? 'active' : ''}`}>
-                    <div className="step-number">1</div>
-                    <div className="step-label">Upload Resume</div>
-                </div>
-                <div className="step-connector"></div>
-                <div className={`step ${step >= 2 ? 'active' : ''}`}>
-                    <div className="step-number">2</div>
-                    <div className="step-label">Company Details</div>
-                </div>
-                <div className="step-connector"></div>
-                <div className={`step ${step >= 3 ? 'active' : ''}`}>
-                    <div className="step-number">3</div>
-                    <div className="step-label">Preview & Send</div>
-                </div>
-            </div>
-
+        <div className="cold-email-container">
+            <h1>Cold Email Generator</h1>
             {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">{success}</div>}
 
-            <div className="cold-email-content">
-                {renderStepContent()}
-            </div>
+            <form onSubmit={handleSubmit} className="email-form">
+                <div className="form-section">
+                    <h2>Recipient Information</h2>
+                    <div className="form-group">
+                        <label htmlFor="recipientName">Recipient Name:</label>
+                        <input
+                            type="text"
+                            id="recipientName"
+                            name="recipientName"
+                            value={customInput.recipientName}
+                            onChange={handleInputChange}
+                            placeholder="e.g., John Smith"
+                            required
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="recipientEmail">Recipient Email:</label>
+                        <input
+                            type="email"
+                            id="recipientEmail"
+                            name="recipientEmail"
+                            value={customInput.recipientEmail}
+                            onChange={handleInputChange}
+                            placeholder="e.g., john.smith@company.com"
+                            required
+                        />
+                    </div>
+
+                    {job && (
+                        <div className="job-info-box">
+                            <h3>Using job application data:</h3>
+                            <p><strong>Company:</strong> {job.company}</p>
+                            <p><strong>Position:</strong> {job.position}</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="form-section">
+                    <h2>Additional Context</h2>
+                    <div className="form-group">
+                        <label htmlFor="additionalContext">Specific details you want to include:</label>
+                        <textarea
+                            id="additionalContext"
+                            name="additionalContext"
+                            value={customInput.additionalContext}
+                            onChange={handleInputChange}
+                            rows="4"
+                            placeholder="Add any specific details you'd like to include in your email..."
+                        />
+                    </div>
+                </div>
+
+                <div className="form-section">
+                    <div className="templates-header">
+                        <h2>Select Email Template</h2>
+                        <button
+                            type="button"
+                            className="create-template-button"
+                            onClick={handleCreateTemplate}
+                        >
+                            + Create New Template
+                        </button>
+                    </div>
+
+                    {templates.length === 0 ? (
+                        <div className="no-templates">
+                            <p>No email templates found. Please create your first template.</p>
+                        </div>
+                    ) : (
+                        <div className="templates-grid">
+                            {templates.map(template => (
+                                <EmailTemplateCard
+                                    key={template.id}
+                                    template={template}
+                                    isSelected={selectedTemplate && selectedTemplate.id === template.id}
+                                    onSelect={() => handleTemplateSelect(template)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="form-actions">
+                    <button
+                        type="button"
+                        className="cancel-button"
+                        onClick={() => navigate('/dashboard')}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className="generate-button"
+                        disabled={loading || !selectedTemplate}
+                    >
+                        {loading ? 'Generating...' : 'Generate Email'}
+                    </button>
+                </div>
+            </form>
         </div>
     );
-}
+};
 
 export default ColdEmailing;

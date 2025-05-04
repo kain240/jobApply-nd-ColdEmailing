@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
 const AuthContext = createContext();
 
@@ -6,167 +6,96 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Check for existing token on mount
     useEffect(() => {
-        const token = localStorage.getItem('jobApplyToken');
-        const user = localStorage.getItem('jobApplyUser');
-
-        if (token && user) {
+        // Check if user is already logged in by looking at localStorage
+        const user = localStorage.getItem('user');
+        if (user) {
             setCurrentUser(JSON.parse(user));
-            setIsAuthenticated(true);
         }
-
         setLoading(false);
     }, []);
 
-    // Login function
-    const login = async (email, password) => {
+    // Register a new user
+    const register = async (userData) => {
+        setLoading(true);
+        setError(null);
+
         try {
-            // Replace with actual API call when backend is ready
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch('http://localhost:5000/api/auth/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            // For development, simulate a successful login
-            if (!response.ok) {
-                // Mock response for development
-                if (email === 'test@example.com' && password === 'password') {
-                    const userData = {
-                        id: '1',
-                        name: 'Test User',
-                        email: 'test@example.com',
-                        role: 'user',
-                    };
-
-                    const mockToken = 'mock-jwt-token';
-
-                    localStorage.setItem('jobApplyToken', mockToken);
-                    localStorage.setItem('jobApplyUser', JSON.stringify(userData));
-
-                    setCurrentUser(userData);
-                    setIsAuthenticated(true);
-                    return { success: true, user: userData };
-                } else {
-                    throw new Error('Invalid credentials');
-                }
-            }
-
-            const data = await response.json();
-
-            localStorage.setItem('jobApplyToken', data.token);
-            localStorage.setItem('jobApplyUser', JSON.stringify(data.user));
-
-            setCurrentUser(data.user);
-            setIsAuthenticated(true);
-
-            return { success: true, user: data.user };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    };
-
-    // Register function
-    const register = async (name, email, password) => {
-        try {
-            // Replace with actual API call when backend is ready
-            const response = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email, password }),
-            });
-
-            if (!response.ok) {
-                // Mock response for development
-                const userData = {
-                    id: '1',
-                    name,
-                    email,
-                    role: 'user',
-                };
-
-                const mockToken = 'mock-jwt-token';
-
-                localStorage.setItem('jobApplyToken', mockToken);
-                localStorage.setItem('jobApplyUser', JSON.stringify(userData));
-
-                setCurrentUser(userData);
-                setIsAuthenticated(true);
-                return { success: true, user: userData };
-            }
-
-            const data = await response.json();
-
-            localStorage.setItem('jobApplyToken', data.token);
-            localStorage.setItem('jobApplyUser', JSON.stringify(data.user));
-
-            setCurrentUser(data.user);
-            setIsAuthenticated(true);
-
-            return { success: true, user: data.user };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    };
-
-    // Logout function
-    const logout = () => {
-        localStorage.removeItem('jobApplyToken');
-        localStorage.removeItem('jobApplyUser');
-        setCurrentUser(null);
-        setIsAuthenticated(false);
-    };
-
-    // Update user profile
-    const updateProfile = async (userData) => {
-        try {
-            // Replace with actual API call when backend is ready
-            const token = localStorage.getItem('jobApplyToken');
-
-            const response = await fetch('/api/users/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify(userData),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                // Mock response for development
-                const updatedUser = { ...currentUser, ...userData };
-                localStorage.setItem('jobApplyUser', JSON.stringify(updatedUser));
-                setCurrentUser(updatedUser);
-                return { success: true, user: updatedUser };
+                throw new Error(data.message || 'Registration failed');
             }
+
+            // Automatically log in the user after successful registration
+            await login({ email: userData.email, password: userData.password });
+            return data;
+        } catch (err) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Login user
+    const login = async (credentials) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(credentials),
+            });
 
             const data = await response.json();
 
-            localStorage.setItem('jobApplyUser', JSON.stringify(data.user));
-            setCurrentUser(data.user);
+            if (!response.ok) {
+                throw new Error(data.message || 'Login failed');
+            }
 
-            return { success: true, user: data.user };
-        } catch (error) {
-            return { success: false, error: error.message };
+            // Save user data and token
+            localStorage.setItem('user', JSON.stringify(data));
+            localStorage.setItem('token', data.token);
+            setCurrentUser(data);
+            return data;
+        } catch (err) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
         }
+    };
+
+    // Logout user
+    const logout = () => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setCurrentUser(null);
     };
 
     const value = {
         currentUser,
-        isAuthenticated,
         loading,
-        login,
+        error,
         register,
-        logout,
-        updateProfile,
+        login,
+        logout
     };
 
     return (

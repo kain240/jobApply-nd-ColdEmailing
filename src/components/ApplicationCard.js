@@ -1,77 +1,94 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, Trash2, ExternalLink, Mail } from 'lucide-react';
+import './Jobs.css';
 
-const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-        case 'applied':
-            return 'bg-blue-100 text-blue-800';
-        case 'interview':
-            return 'bg-purple-100 text-purple-800';
-        case 'offer':
-            return 'bg-green-100 text-green-800';
-        case 'rejected':
-            return 'bg-red-100 text-red-800';
-        default:
-            return 'bg-gray-100 text-gray-800';
-    }
-};
+const ApplicationCard = ({ job, onDelete }) => {
+    // Format date to be more readable
+    const formatDate = (dateString) => {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    };
 
-const ApplicationCard = ({ application, onDelete }) => {
+    // Get status color for visual indication
+    const getStatusColor = (status) => {
+        switch(status) {
+            case 'Applied':
+                return 'status-applied';
+            case 'Screening':
+                return 'status-screening';
+            case 'Interview':
+                return 'status-interview';
+            case 'Technical':
+                return 'status-technical';
+            case 'Offer':
+                return 'status-offer';
+            case 'Rejected':
+                return 'status-rejected';
+            case 'Withdrawn':
+                return 'status-withdrawn';
+            default:
+                return 'status-default';
+        }
+    };
+
     return (
-        <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h3 className="text-lg font-medium text-gray-900">{application.jobTitle}</h3>
-                    <p className="text-sm text-gray-600">{application.company}</p>
-                </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(application.status)}`}>
-          {application.status}
+        <div className="application-card">
+            <div className="card-header">
+                <h3 className="job-position">{job.position}</h3>
+                <span className={`status-badge ${getStatusColor(job.applicationStatus)}`}>
+          {job.applicationStatus}
         </span>
             </div>
 
-            <div className="mt-3 flex items-center text-sm text-gray-500">
-                <span>{application.location}</span>
-                <span className="mx-2">•</span>
-                <span>{application.jobType}</span>
+            <div className="card-company">
+                <span className="company-name">{job.company}</span>
+                {job.location && (
+                    <span className="job-location">{job.location}</span>
+                )}
             </div>
 
-            <div className="mt-3">
-                <p className="text-sm text-gray-600">Applied on: {new Date(application.dateApplied).toLocaleDateString()}</p>
+            <div className="card-date">
+                <span className="date-label">Applied on:</span>
+                <span className="date-value">{formatDate(job.applicationDate)}</span>
             </div>
 
-            <div className="mt-4 flex justify-between">
-                <div className="flex space-x-2">
-                    <Link
-                        to={`/applications/edit/${application.id}`}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md"
-                    >
-                        <Edit size={18} />
-                    </Link>
-                    <button
-                        onClick={() => onDelete(application.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md"
-                    >
-                        <Trash2 size={18} />
-                    </button>
+            {job.contactPerson && (
+                <div className="card-contact">
+                    <span className="contact-name">{job.contactPerson}</span>
+                    {job.contactEmail && (
+                        <a href={`mailto:${job.contactEmail}`} className="contact-email">
+                            {job.contactEmail}
+                        </a>
+                    )}
                 </div>
+            )}
 
-                <div className="flex space-x-2">
+            <div className="card-actions">
+                <Link to={`/edit-application/${job.id}`} className="edit-button">
+                    Edit
+                </Link>
+
+                {job.jobUrl && (
                     <a
-                        href={application.jobUrl}
+                        href={job.jobUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-md"
+                        className="view-job-button"
                     >
-                        <ExternalLink size={18} />
+                        View Job
                     </a>
-                    <Link
-                        to={`/cold-emails/new?company=${application.company}`}
-                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-md"
-                    >
-                        <Mail size={18} />
-                    </Link>
-                </div>
+                )}
+
+                <Link to={`/cold-emailing?jobId=${job.id}`} className="email-button">
+                    Create Email
+                </Link>
+
+                <button
+                    onClick={onDelete}
+                    className="delete-button"
+                >
+                    Delete
+                </button>
             </div>
         </div>
     );

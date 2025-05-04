@@ -1,46 +1,94 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
 // Layout Components
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
+import Navbar from './components/Layout/Navbar';
+import Footer from './components/Layout/Footer';
+import Sidebar from './components/Layout/Sidebar';
+
+// Auth Components
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 // Pages
-import Home from './pages/Home/Home';
-import Login from './pages/Login/Login';
-import Register from './pages/Register/Register';
-import Dashboard from './pages/Dashboard/Dashboard';
-import JobSearch from './pages/JobSearch/JobSearch';
-import JobDetails from './pages/JobDetails/JobDetails';
-import SavedJobs from './pages/SavedJobs/SavedJobs';
-import ApplicationTracker from './pages/ApplicationTracker/ApplicationTracker';
-import ColdEmailGenerator from './pages/ColdEmailGenerator/ColdEmailGenerator';
-import ColdEmailTemplates from './pages/ColdEmailTemplates/ColdEmailTemplates';
-import Profile from './pages/Profile/Profile';
-import NotFound from './pages/NotFound/NotFound';
+import Dashboard from './pages/Dashboard';
+import AddApplication from './pages/AddApplication';
+import EditApplication from './pages/EditApplication';
+import ColdEmailing from './pages/ColdEmailing';
+import GeneratedEmail from './pages/GeneratedEmail';
 
 function App() {
     return (
         <Router>
-            <div className="App">
+            <div className="app-container">
                 <Navbar />
-                <main className="main-content">
+                <div className="main-content">
                     <Routes>
-                        <Route path="/" element={<Home />} />
+                        {/* Public Routes */}
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/job-search" element={<JobSearch />} />
-                        <Route path="/job/:id" element={<JobDetails />} />
-                        <Route path="/saved-jobs" element={<SavedJobs />} />
-                        <Route path="/application-tracker" element={<ApplicationTracker />} />
-                        <Route path="/cold-email-generator" element={<ColdEmailGenerator />} />
-                        <Route path="/cold-email-templates" element={<ColdEmailTemplates />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="*" element={<NotFound />} />
+
+                        {/* Protected Routes */}
+                        <Route path="/" element={
+                            <ProtectedRoute>
+                                <div className="dashboard-layout">
+                                    <Sidebar />
+                                    <Dashboard />
+                                </div>
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/dashboard" element={
+                            <ProtectedRoute>
+                                <div className="dashboard-layout">
+                                    <Sidebar />
+                                    <Dashboard />
+                                </div>
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/add-application" element={
+                            <ProtectedRoute>
+                                <div className="dashboard-layout">
+                                    <Sidebar />
+                                    <AddApplication />
+                                </div>
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/edit-application/:id" element={
+                            <ProtectedRoute>
+                                <div className="dashboard-layout">
+                                    <Sidebar />
+                                    <EditApplication />
+                                </div>
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/cold-emailing" element={
+                            <ProtectedRoute>
+                                <div className="dashboard-layout">
+                                    <Sidebar />
+                                    <ColdEmailing />
+                                </div>
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/generated-email/:id" element={
+                            <ProtectedRoute>
+                                <div className="dashboard-layout">
+                                    <Sidebar />
+                                    <GeneratedEmail />
+                                </div>
+                            </ProtectedRoute>
+                        } />
+
+                        {/* Redirect unknown routes to Dashboard */}
+                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
-                </main>
+                </div>
                 <Footer />
             </div>
         </Router>
